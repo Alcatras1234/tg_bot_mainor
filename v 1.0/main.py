@@ -2,7 +2,6 @@ import datetime
 import telebot
 import json
 import time
-import schedule
 from telebot import types
 from pymongo import MongoClient
 
@@ -167,21 +166,22 @@ def callback_message(callback):
     markup.add(types.InlineKeyboardButton('✅Выполнил', callback_data='done'),
                types.InlineKeyboardButton('❌Не выполнил', callback_data='not_done'))
 
-    with open("task.json", "r", encoding='utf-8') as file:
-        data1 = json.load(file)
+    done_task = collection.find_one({"_id": callback.message.chat.id})["numtask"]
+    with open(f"files/task{done_task + 1}.txt", "r", encoding='utf-8') as file:
+        data1 = file.read()
+
 
     if callback.data == "audio":
         global audio_clicks
         audio_clicks += 1
 
         data["audio_click"] = audio_clicks  # меняет зачение в словаре
-        with open("Output.json", "w") as file:
+        with open("Output.json", "w") as file: # записывает клики
             json.dump(data, file)
 
-        done_task = collection.find_one({"_id": callback.message.chat.id})["numtask"]
-
-        task = data1[done_task]['task']
-        bot_api.send_message(callback.message.chat.id, f"Task: {task}", reply_markup=markup)
+        audio = open(fr'audio/task{done_task}.mp3', 'rb')
+        bot_api.send_audio(callback.message.chat.id, audio, reply_markup=markup)
+        audio.close()
 
     elif callback.data == "textt":
         global text_clicks
@@ -190,7 +190,7 @@ def callback_message(callback):
         with open("Output.json", "w") as file:  # записываем в json файл
             json.dump(data, file)
 
-        bot_api.send_message(callback.message.chat.id, "Текстовое задание", reply_markup=markup)
+        bot_api.send_message(callback.message.chat.id, f"{data1}", reply_markup=markup)
 
     elif callback.data == "done":
         # Удаляем inline кнопку после нажатия
