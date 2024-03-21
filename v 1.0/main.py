@@ -99,13 +99,14 @@ def check_daily_task(message):
         markup.add(types.InlineKeyboardButton('Купить', callback_data='buy'))
         bot_api.send_message(message.chat.id, "Вы завершили курс, спасибо! Еслхи хотите, купите курс",
                              reply_markup=markup)
-    elif numtask == 1 or numtask == 4:
+    elif numtask == 2 or numtask == 5:
 
         markup = types.InlineKeyboardMarkup(row_width=2)
         btn = types.InlineKeyboardButton(text="Оставить отзыв", url="https://youtu.be/pwIZ4LChrt0?t=19")
         btnCancel = types.InlineKeyboardButton(text="Оставить отзыв без ответа", callback_data="cancel")
         markup.add(btn, btnCancel)
         bot_api.send_message(message.chat.id, "Прошлое задание было выполненно, если хотите, оставьте отзыв)", reply_markup=markup)
+        time.sleep(10)
         day_task(message)
 
     else:
@@ -119,7 +120,6 @@ def check_daily_task(message):
             if (current_date != last_time_date) :
                 bot_api.send_message(message.chat.id, "Твое время не пришло, приходи завтра")
             else:
-
                 day_task(message)
 
 
@@ -213,22 +213,29 @@ def callback_message(callback):
 
 
         bot_api.send_message(callback.message.chat.id, "Как вам задание? Оцените его по 5 - ти бальной шкале", reply_markup=markup)
+    elif callback.data == "not_done": #если не сделал задание, то мы обновляем счетчик и выводим сообщение
+        collection.update_one({"_id": callback.message.chat.id}, {
+            "$set": {"date": datetime.date.today().isoformat()}})  # задается дата в день выполнения задания
+        bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
+                                          reply_markup=None)
+        numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"]  # обновляем счетчик заданий
+        numtask += 1
+        collection.update_one({"_id": callback.message.chat.id}, {"$set": {"numtask": numtask}})
+        bot_api.send_message(callback.message.chat.id, "Не волнуйтесь, если сегодняшняя практика не подошла или вы не успели выполнить ее. Обязательно возвращайтесь завтра за новым заданием.")
 
 
     elif callback.data in ['Плохо', 'Ниже среднего', 'Средне', 'Хорошо', 'Отлично']:
         # Получаем номер задания, для которого пользователь оставил отзыв
         numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"]
 
-        if callback.message.text:
-            # Обновляем базу данных с оценкой и отзывом
-            collection.update_one({"_id": callback.message.chat.id},
+        collection.update_one({"_id": callback.message.chat.id},
                                   {"$set": {f"task_review.task{numtask}.grade": callback.data}})
         bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
                                           reply_markup=None)
 
         markup2 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)  # подраивание под нужной размер
-        task_every_day = types.KeyboardButton("Оставить Отзыв о задании")
-        bot_api.send_message(callback.message.chat.id, 'Оставьте отзыв о задании', reply_markup=markup2)
+
+        bot_api.send_message(callback.message.chat.id, 'А я не знаю как удалить это сообщение', reply_markup=markup2)
 
 
         numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"] #обновляем счетчик заданий
@@ -243,6 +250,7 @@ def callback_message(callback):
             # Отправляем сообщение с благодарностью
             bot_api.send_message(callback.message.chat.id,
                                  "Спасибо за отзыв!")
+            bot_api.send_message(callback.message.chat.id, f"Не забывайте говорить себе спасибо: даже пять минут осознанного наблюдения за собой могут изменить день. Ваш прогресс: {numtask}/7. Ждем завтра с новой практикой!)")
            
 
     elif callback.data == "buy":
