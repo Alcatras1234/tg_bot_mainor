@@ -35,8 +35,6 @@ def check_time(message):
 
 
 
-
-
 @bot_api.message_handler(commands=['start'])
 def start(message):
     global id
@@ -44,9 +42,9 @@ def start(message):
 
     if collection.find_one({"_id": id}):
         name = collection.find_one({"_id": id})["name"]
-        bot_api.send_message(message.chat.id, f"Привет {name}!!!!")
+        bot_api.send_message(message.chat.id, f"Привет, {name}!!!")
     else:
-        #date = datetime.date.today().isoformat()
+        # date = datetime.date.today().isoformat()
         user = message.from_user.username
         collection.insert_one({ # запись в базу данных пользовательскую инфу
             "_id": id,
@@ -86,26 +84,29 @@ def start(message):
             }
 
         })
-    text = ("Тут красуется сообщение о курсе.\n"
-            "\n"
-            "\n"
-            "Жми /menu")
-    bot_api.send_message(message.chat.id, text, parse_mode='html')
+
+    with open(f"files/hello_message.txt", "r", encoding='utf-8') as file:
+        text = file.read().split('\n\n')
+        hello_message = f'<b>{text[0]}</b> \n\n{text[1]} \n\n<i>{text[2]}</i>'
+
+    bot_api.send_message(message.chat.id, hello_message, parse_mode='html')
+
+
 def check_daily_task(message):
     numtask = collection.find_one({"_id": message.chat.id})["numtask"]
     if numtask == 7:
         markup = types.InlineKeyboardMarkup()
 
         markup.add(types.InlineKeyboardButton('Купить', callback_data='buy'))
-        bot_api.send_message(message.chat.id, "Вы завершили курс, спасибо! Еслхи хотите, купите курс",
+        bot_api.send_message(message.chat.id, 'Вы завершили курс, спасибо! Если хотите, купите курс',
                              reply_markup=markup)
     elif numtask == 2 or numtask == 5:
 
         markup = types.InlineKeyboardMarkup(row_width=2)
-        btn = types.InlineKeyboardButton(text="Оставить отзыв", url="https://youtu.be/pwIZ4LChrt0?t=19")
-        btnCancel = types.InlineKeyboardButton(text="Оставить отзыв без ответа", callback_data="cancel")
+        btn = types.InlineKeyboardButton(text='Оставить отзыв', url='https://youtu.be/pwIZ4LChrt0?t=19')
+        btnCancel = types.InlineKeyboardButton(text='Оставить отзыв без ответа', callback_data='cancel')
         markup.add(btn, btnCancel)
-        bot_api.send_message(message.chat.id, "Прошлое задание было выполненно, если хотите, оставьте отзыв)", reply_markup=markup)
+        bot_api.send_message(message.chat.id, 'Прошлое задание было выполненно, если хотите, оставьте отзыв)', reply_markup=markup)
         time.sleep(10)
         day_task(message)
 
@@ -114,7 +115,7 @@ def check_daily_task(message):
 
         current_date = datetime.date.today().isoformat()
         if collection.find_one({"_id": message.chat.id})["numtask"] == 0:
-            day_task(message) ###
+            day_task(message)
 
         else:
             if (current_date != last_time_date) :
@@ -168,15 +169,17 @@ def callback_message(callback):
 
     done_task = collection.find_one({"_id": callback.message.chat.id})["numtask"]
     with open(f"files/task{done_task + 1}.txt", "r", encoding='utf-8') as file:
-        data1 = file.read()
+        task_text = file.read().split('\n\n')
+        data1 = f'<b>{task_text[0]}</b> \n\n{task_text[1]} \n\n{task_text[2]}'
+
 
 
     if callback.data == "audio":
         global audio_clicks
         audio_clicks += 1
 
-        data["audio_click"] = audio_clicks  # меняет зачение в словаре
-        with open("Output.json", "w") as file: # записывает клики
+        data["audio_click"] = audio_clicks # Меняет зачение в словаре
+        with open("Output.json", "w") as file: # Записывает клики
             json.dump(data, file)
 
         audio = open(fr'audio/task{done_task}.mp3', 'rb')
@@ -186,19 +189,21 @@ def callback_message(callback):
     elif callback.data == "textt":
         global text_clicks
         text_clicks += 1
-        data["text_click"] = text_clicks  # меняем значение в словаре
-        with open("Output.json", "w") as file:  # записываем в json файл
+        data["text_click"] = text_clicks # Меняет значение в словаре
+        with open("Output.json", "w") as file: # Записывает в json файл
             json.dump(data, file)
 
-        bot_api.send_message(callback.message.chat.id, f"{data1}", reply_markup=markup)
+        #bot_api.send_message(callback.message.chat.id, data1, reply_markup=markup)
+        bot_api.send_message(callback.message.chat.id, data1, parse_mode = 'html', reply_markup=markup)
+
 
     elif callback.data == "done":
-        # Удаляем inline кнопку после нажатия
+        # Улаляет inline кнопку после нажатия
         bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id, reply_markup=None)
 
-        #current_time = datetime.datetime.now()
-        #a = (current_time - current_time.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
-        #collection.update_one({"_id": callback.message.chat.id}, {"$set": {"coolldown": a}})
+        # current_time = datetime.datetime.now()
+        # a = (current_time - current_time.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+        # collection.update_one({"_id": callback.message.chat.id}, {"$set": {"coolldown": a}})
         collection.update_one({"_id": callback.message.chat.id}, {"$set": {"date": datetime.date.today().isoformat()}}) # задается дата в день выполнения задания
 
         ##########################
@@ -213,9 +218,9 @@ def callback_message(callback):
 
 
         bot_api.send_message(callback.message.chat.id, "Как вам задание? Оцените его по 5 - ти бальной шкале", reply_markup=markup)
-    elif callback.data == "not_done": #если не сделал задание, то мы обновляем счетчик и выводим сообщение
+    elif callback.data == "not_done": # Если задание не выполнено, обновляем счетчик и выводим сообщение
         collection.update_one({"_id": callback.message.chat.id}, {
-            "$set": {"date": datetime.date.today().isoformat()}})  # задается дата в день выполнения задания
+            "$set": {"date": datetime.date.today().isoformat()}})  # Задается дата в день выполнения задания
         bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
                                           reply_markup=None)
         numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"]  # обновляем счетчик заданий
@@ -225,7 +230,7 @@ def callback_message(callback):
 
 
     elif callback.data in ['Плохо', 'Ниже среднего', 'Средне', 'Хорошо', 'Отлично']:
-        # Получаем номер задания, для которого пользователь оставил отзыв
+        # Получение номера задания, для которого пользователь оставил отзыв
         numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"]
 
         collection.update_one({"_id": callback.message.chat.id},
@@ -245,12 +250,17 @@ def callback_message(callback):
             markup = types.InlineKeyboardMarkup()
 
             markup.add(types.InlineKeyboardButton('Купить', callback_data='buy'))
-            bot_api.send_message(callback.message.chat.id, "Ты молодец, трали вали, курс купишь да?", reply_markup=markup)
+
+            with open(f"files/goodbye_message.txt", "r", encoding='utf-8') as file:
+                text = file.read().split('\n\n')
+                goodbye_message = f'<b>{text[0]}</b> \n\n{text[1]} \n\n<i>{text[2]}</i>'
+
+            bot_api.send_message(callback.message.chat.id, goodbye_message, parse_mode='html', reply_markup=markup)
         else:
-            # Отправляем сообщение с благодарностью
+            # Отправка сообщения с благодарностью
             bot_api.send_message(callback.message.chat.id,
                                  "Спасибо за отзыв!")
-            bot_api.send_message(callback.message.chat.id, f"Не забывайте говорить себе спасибо: даже пять минут осознанного наблюдения за собой могут изменить день. Ваш прогресс: {numtask}/7. Ждем завтра с новой практикой!)")
+            bot_api.send_message(callback.message.chat.id, f"Спасибо за оценку! Не забывайте говорить себе спасибо: даже пять минут осознанного наблюдения за собой могут изменить день. Ваш прогресс: {numtask}/7. Ждем завтра с новой практикой!)")
            
 
     elif callback.data == "buy":
@@ -259,7 +269,7 @@ def callback_message(callback):
         global buy_clicks
         buy_clicks += 1
 
-        data["buy_click"] = buy_clicks  # меняет зачение в словаре
+        data["buy_click"] = buy_clicks  # Меняет зачение в словаре
         with open("Output.json", "w") as file:
             json.dump(data, file)
         bot_api.send_message(callback.message.chat.id, "Спасибо, с ваше карты списало 1.000.000.000 тенге, всего хорошего")
@@ -282,4 +292,4 @@ def day_task(message):
 
 
 
-bot_api.polling(none_stop=True) # бот работает в нон стоп режиме
+bot_api.polling(none_stop=True) # Бот работает в нон стоп режиме
