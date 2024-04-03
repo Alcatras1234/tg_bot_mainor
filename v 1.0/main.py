@@ -182,7 +182,7 @@ def callback_message(callback):
         with open("Output.json", "w") as file: # Записывает клики
             json.dump(data, file)
 
-        audio = open(fr'audio/task{done_task}.mp3', 'rb')
+        audio = open(fr'audio/task{done_task + 1}.mp3', 'rb')
         bot_api.send_audio(callback.message.chat.id, audio, reply_markup=markup)
         audio.close()
 
