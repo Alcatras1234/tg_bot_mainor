@@ -103,7 +103,7 @@ def check_daily_task(message):
     elif numtask == 2 or numtask == 5:
 
         markup = types.InlineKeyboardMarkup(row_width=2)
-        btn = types.InlineKeyboardButton(text='Оставить отзыв', url='https://youtu.be/pwIZ4LChrt0?t=19')
+        btn = types.InlineKeyboardButton(text='Оставить отзыв', url='https://forms.gle/SiGYEb6SMkswtwEE8')
         btnCancel = types.InlineKeyboardButton(text='Оставить отзыв без ответа', callback_data='cancel')
         markup.add(btn, btnCancel)
         bot_api.send_message(message.chat.id, 'Прошлое задание было выполненно, если хотите, оставьте отзыв)', reply_markup=markup)
@@ -233,9 +233,7 @@ def callback_message(callback):
 
         collection.update_one({"_id": callback.message.chat.id},
                                   {"$set": {f"task_review.task{numtask}.grade": callback.data}})
-        bot_api.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
-                                          text=f"Спасибо за оценку! Не забывайте говорить себе спасибо: даже пять минут осознанного наблюдения за собой могут изменить день. Ваш прогресс: {numtask}/7. Ждем завтра с новой практикой!)",
-                                          reply_markup=None)
+        bot_api.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
 
         markup2 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)  # подраивание под нужной размер
 
@@ -255,6 +253,8 @@ def callback_message(callback):
                 goodbye_message = f'<b>{text[0]}</b> \n\n{text[1]} \n\n<i>{text[2]}</i>'
 
             bot_api.send_message(callback.message.chat.id, goodbye_message, parse_mode='html', reply_markup=markup)
+        else:
+            bot_api.send_message(callback.message.chat.id, f"Спасибо за оценку! Не забывайте говорить себе спасибо: даже пять минут осознанного наблюдения за собой могут изменить день. Ваш прогресс: {numtask}/7. Ждем завтра с новой практикой!)")
 
            
 
