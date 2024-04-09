@@ -201,9 +201,7 @@ def callback_message(callback):
         # Улаляет inline кнопку после нажатия
         bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id, reply_markup=None)
 
-        # current_time = datetime.datetime.now()
-        # a = (current_time - current_time.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
-        # collection.update_one({"_id": callback.message.chat.id}, {"$set": {"coolldown": a}})
+
         collection.update_one({"_id": callback.message.chat.id}, {"$set": {"date": datetime.date.today().isoformat()}}) # задается дата в день выполнения задания
 
         ##########################
@@ -235,12 +233,13 @@ def callback_message(callback):
 
         collection.update_one({"_id": callback.message.chat.id},
                                   {"$set": {f"task_review.task{numtask}.grade": callback.data}})
-        bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
+        bot_api.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
+                                          text=f"Спасибо за оценку! Не забывайте говорить себе спасибо: даже пять минут осознанного наблюдения за собой могут изменить день. Ваш прогресс: {numtask}/7. Ждем завтра с новой практикой!)",
                                           reply_markup=None)
 
         markup2 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)  # подраивание под нужной размер
 
-        bot_api.send_message(callback.message.chat.id, 'А я не знаю как удалить это сообщение', reply_markup=markup2)
+
 
 
         numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"] #обновляем счетчик заданий
@@ -256,11 +255,7 @@ def callback_message(callback):
                 goodbye_message = f'<b>{text[0]}</b> \n\n{text[1]} \n\n<i>{text[2]}</i>'
 
             bot_api.send_message(callback.message.chat.id, goodbye_message, parse_mode='html', reply_markup=markup)
-        else:
-            # Отправка сообщения с благодарностью
-            bot_api.send_message(callback.message.chat.id,
-                                 "Спасибо за отзыв!")
-            bot_api.send_message(callback.message.chat.id, f"Спасибо за оценку! Не забывайте говорить себе спасибо: даже пять минут осознанного наблюдения за собой могут изменить день. Ваш прогресс: {numtask}/7. Ждем завтра с новой практикой!)")
+
            
 
     elif callback.data == "buy":
@@ -275,9 +270,10 @@ def callback_message(callback):
         bot_api.send_message(callback.message.chat.id, "Спасибо, с ваше карты списало 1.000.000.000 тенге, всего хорошего")
 
     elif callback.data == "cancel":
-        bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
+        bot_api.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
+                                        text="Хорошо, до встречи",
                                          reply_markup=None)
-        bot_api.send_message(callback.message.chat.id, "Ладно, еще увидимся")
+
 
 
 @bot_api.message_handler(commands=['daytask'])
