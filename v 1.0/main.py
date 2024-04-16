@@ -5,7 +5,7 @@ import time
 from telebot import types
 from pymongo import MongoClient
 
-cluster = MongoClient("mongodb://localhost:27017") # да прописано тут, мне так проще
+cluster = MongoClient("mongodb+srv://dbak:Parol123@cluster0.irjmz6q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0") # да прописано тут, мне так проще
 
 db = cluster["db_tg_bot"]
 collection = db["tg_bot"]
@@ -107,7 +107,7 @@ def check_daily_task(message):
         btnCancel = types.InlineKeyboardButton(text='Оставить отзыв без ответа', callback_data='cancel')
         markup.add(btn, btnCancel)
         bot_api.send_message(message.chat.id, 'Прошлое задание было выполненно, если хотите, оставьте отзыв)', reply_markup=markup)
-        time.sleep(10)
+        time.sleep(3)
         day_task(message)
 
     else:
@@ -144,7 +144,7 @@ def menu(message):
     task_every_day = types.KeyboardButton("Ежедневное задание")
     info = types.KeyboardButton("О курсе")
 
-    photo_menu = open(r"img\menu_bottum.png", 'rb')
+    photo_menu = open(r"img/menu_bottum.png", 'rb')
     markup.add(task_every_day, info)  # добавляем наши кнопки
     bot_api.send_message(message.chat.id, 'Нажимай на эту кнопку', reply_markup=markup)
     bot_api.send_photo(message.chat.id, photo_menu)
@@ -168,9 +168,10 @@ def callback_message(callback):
                types.InlineKeyboardButton('❌Не выполнил', callback_data='not_done'))
 
     done_task = collection.find_one({"_id": callback.message.chat.id})["numtask"]
-    with open(f"files/task{done_task + 1}.txt", "r", encoding='utf-8') as file:
-        task_text = file.read().split('\n\n')
-        data1 = f'<b>{task_text[0]}</b> \n\n{task_text[1]} \n\n{task_text[2]}'
+    if (done_task != 7):
+        with open(f"files/task{done_task + 1}.txt", "r", encoding='utf-8') as file:
+            task_text = file.read().split('\n\n')
+            data1 = f'<b>{task_text[0]}</b> \n\n{task_text[1]} \n\n{task_text[2]}'
 
 
 
@@ -259,8 +260,7 @@ def callback_message(callback):
            
 
     elif callback.data == "buy":
-        bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
-                                          reply_markup=None)
+        bot_api.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
         global buy_clicks
         buy_clicks += 1
 
