@@ -98,7 +98,7 @@ def check_daily_task(message):
         markup = types.InlineKeyboardMarkup()
 
         markup.add(types.InlineKeyboardButton('Купить', callback_data='buy'))
-        bot_api.send_message(message.chat.id, 'Вы завершили курс, спасибо! Если хотите, купите курс',
+        bot_api.send_message(message.chat.id, 'Вы завершили курс, спасибо, что прошли этот путь вместе с нами! Если вы хотите продлить доступ к новым практикам, вы можете купить двухнедельный курс за 299 рублей',
                              reply_markup=markup)
     elif numtask == 2 or numtask == 5:
 
