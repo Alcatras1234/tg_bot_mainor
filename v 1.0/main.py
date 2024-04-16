@@ -5,14 +5,13 @@ import time
 from telebot import types
 from pymongo import MongoClient
 
-cluster = MongoClient("mongodb+srv://dbak:Parol123@cluster0.irjmz6q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0") # да прописано тут, мне так проще
+cluster = MongoClient("mongodb+srv://dbak:Parol123@cluster0.irjmz6q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0") # Да, прописано тут, мне так проще
 
 db = cluster["db_tg_bot"]
 collection = db["tg_bot"]
 
 
-
-bot_api = telebot.TeleBot('6699558777:AAE0uFXq5M1jlQVBkCj3751EB6Ap0vEI5E8') # тут лежит т.к. ssh ключ от сервера лежит на компе
+bot_api = telebot.TeleBot('6699558777:AAE0uFXq5M1jlQVBkCj3751EB6Ap0vEI5E8') # Тут лежит т.к. ssh ключ от сервера лежит на компе
 audio_clicks = 0
 text_clicks = 0
 buy_clicks = 0
@@ -25,14 +24,13 @@ data = {  # JSON'ка для сохранения значения кликов 
     "audio_click": audio_clicks,
     "text_click": text_clicks,
     "buy_click": buy_clicks
-}  # dictionary
+}
 
 # Функция для отслеживания времени последнего нажатия кнопки "Выполнил" для каждого пользователя
 last_done_action_time = {}
 
 def check_time(message):
     collection.update_one({"_id": message.chat.id}, {"$set": {"time": message.text}})
-
 
 
 @bot_api.message_handler(commands=['start'])
@@ -44,9 +42,8 @@ def start(message):
         name = collection.find_one({"_id": id})["name"]
         bot_api.send_message(message.chat.id, f"Привет, {name}!!!")
     else:
-        # date = datetime.date.today().isoformat()
         user = message.from_user.username
-        collection.insert_one({ # запись в базу данных пользовательскую инфу
+        collection.insert_one({ # Запись в базу данных пользовательскую инфу
             "_id": id,
             "name": user,
             "time": 0,
@@ -140,16 +137,16 @@ def stati(message):
 
 @bot_api.message_handler(commands=['menu'])
 def menu(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1) # подраивание под нужной размер
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1) # Подстраивается под нужный размер
     task_every_day = types.KeyboardButton("Ежедневное задание")
     info = types.KeyboardButton("О курсе")
 
     photo_menu = open(r"img/menu_bottum.png", 'rb')
-    markup.add(task_every_day, info)  # добавляем наши кнопки
+    markup.add(task_every_day, info)  # Добавление кнопок
     bot_api.send_message(message.chat.id, 'Нажимай на эту кнопку', reply_markup=markup)
     bot_api.send_photo(message.chat.id, photo_menu)
 
-@bot_api.message_handler(content_types=['text'])  # обрабатываем кнопки основного меню, высылаемые текстом
+@bot_api.message_handler(content_types=['text'])  # Обработка кнопок основного меню, высылаемые текстом
 def func(message):
     if (message.text == "О курсе"):
         start(message)
@@ -159,11 +156,11 @@ def func(message):
 
 
 
-@bot_api.callback_query_handler(func = lambda callback: True) # для кнопок, которые выводятся после нажатия "Ежедневное задание"
+@bot_api.callback_query_handler(func = lambda callback: True) # Для кнопок, которые выводятся после нажатия "Ежедневное задание"
 def callback_message(callback):
 
 
-    markup = types.InlineKeyboardMarkup(row_width=2)  # выводим кнопки в строчку по две штуки
+    markup = types.InlineKeyboardMarkup(row_width=2)  # Вывод кнопок в строчку по две штуки
     markup.add(types.InlineKeyboardButton('✅Выполнил', callback_data='done'),
                types.InlineKeyboardButton('❌Не выполнил', callback_data='not_done'))
 
@@ -176,11 +173,13 @@ def callback_message(callback):
 
 
     if callback.data == "audio":
+        bot_api.delete_message(chat_id=callback.message.chat.id,
+                               message_id=callback.message.message_id) # Удаление сообщение с выбором.
         global audio_clicks
         audio_clicks += 1
 
-        data["audio_click"] = audio_clicks # Меняет зачение в словаре
-        with open("Output.json", "w") as file: # Записывает клики
+        data["audio_click"] = audio_clicks # Изменение зачения в словаре
+        with open("Output.json", "w") as file: # Запись кликов
             json.dump(data, file)
 
         audio = open(fr'audio/task{done_task + 1}.mp3', 'rb')
@@ -188,24 +187,24 @@ def callback_message(callback):
         audio.close()
 
     elif callback.data == "textt":
+        bot_api.delete_message(chat_id=callback.message.chat.id,
+                               message_id=callback.message.message_id)  # Удаляем сообщение с выбором.
         global text_clicks
         text_clicks += 1
         data["text_click"] = text_clicks # Меняет значение в словаре
         with open("Output.json", "w") as file: # Записывает в json файл
             json.dump(data, file)
 
-        #bot_api.send_message(callback.message.chat.id, data1, reply_markup=markup)
         bot_api.send_message(callback.message.chat.id, data1, parse_mode = 'html', reply_markup=markup)
 
 
     elif callback.data == "done":
-        # Улаляет inline кнопку после нажатия
+        # Удаляет inline кнопку после нажатия
         bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id, reply_markup=None)
 
 
         collection.update_one({"_id": callback.message.chat.id}, {"$set": {"date": datetime.date.today().isoformat()}}) # задается дата в день выполнения задания
 
-        ##########################
         markup = types.InlineKeyboardMarkup()
 
         markup.add(types.InlineKeyboardButton('1', callback_data='Плохо'))
@@ -222,7 +221,7 @@ def callback_message(callback):
             "$set": {"date": datetime.date.today().isoformat()}})  # Задается дата в день выполнения задания
         bot_api.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
                                           reply_markup=None)
-        numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"]  # обновляем счетчик заданий
+        numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"] # Обновление счетчика заданий
         numtask += 1
         collection.update_one({"_id": callback.message.chat.id}, {"$set": {"numtask": numtask}})
         bot_api.send_message(callback.message.chat.id, "Не волнуйтесь, если сегодняшняя практика не подошла или вы не успели выполнить ее. Обязательно возвращайтесь завтра за новым заданием.")
@@ -236,12 +235,12 @@ def callback_message(callback):
                                   {"$set": {f"task_review.task{numtask}.grade": callback.data}})
         bot_api.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
 
-        markup2 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)  # подраивание под нужной размер
+        markup2 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)  # Подстраивание под нужный размер
 
 
 
 
-        numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"] #обновляем счетчик заданий
+        numtask = collection.find_one({"_id": callback.message.chat.id})["numtask"] # Обновление счетчика заданий
         numtask += 1
         collection.update_one({"_id": callback.message.chat.id}, {"$set": {"numtask": numtask}})
         if (numtask == 7):
